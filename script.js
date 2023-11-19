@@ -1,10 +1,9 @@
 'use strict';
 
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-// BANKIST APP
+////////////
+//  Data  //
+////////////
 
-// Data
 const account1 = {
   owner: 'Jonas Schmedtmann',
   movements: [200, 450, -400, 3000, -650, -130, 70, 1300],
@@ -35,7 +34,10 @@ const account4 = {
 
 const accounts = [account1, account2, account3, account4];
 
-// Elements
+////////////////
+//  Elements  //
+////////////////
+
 const labelWelcome = document.querySelector('.welcome');
 const labelDate = document.querySelector('.date');
 const labelBalance = document.querySelector('.balance__value');
@@ -61,6 +63,22 @@ const inputLoanAmount = document.querySelector('.form__input--loan-amount');
 const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
+/////////////////
+//  Functions  //
+/////////////////
+
+// function which creates usernames
+const createUserames = function (accs) {
+  accs.forEach(function (el) {
+    el.username = el.owner
+      .toLowerCase()
+      .split(' ')
+      .map(i => i[0])
+      .join(``);
+  });
+};
+
+// function to display all movements inside the "containerMovements"
 const displayMovements = function (movements) {
   containerMovements.innerHTML = ``;
   movements.forEach(function (movement, index) {
@@ -76,18 +94,48 @@ const displayMovements = function (movements) {
     containerMovements.insertAdjacentHTML(`afterbegin`, htmlPiece);
   });
 };
+
+// function to calculate and display current balance
+const calcShowBalance = function (movements) {
+  const currentBalance = movements.reduce(function (accumul, current) {
+    return accumul + current;
+  }, 0);
+  labelBalance.textContent = `${currentBalance}€`;
+};
+
+// function to calculate and display summury
+const calcDisplaySummury = function (movements) {
+  // money in
+  const totalIn = movements
+    .filter(el => el > 0)
+    .reduce((acc, el) => acc + el, 0);
+  labelSumIn.textContent = `${totalIn}€`;
+
+  // money out
+  const totalOut = movements
+    .filter(el => el < 0)
+    .reduce((acc, el) => acc + el, 0);
+  labelSumOut.textContent = `${Math.abs(totalOut)}€`;
+
+  // interest
+  // bank pays interest each time that there is a deposit to the bank account
+  // bank only pays an interest if that interest is at least one Euro
+  const interest = movements
+    .filter(el => el > 0)
+    .map(el => (el * 1.2) / 100)
+    .filter(el => el >= 1)
+    .reduce((acc, el) => acc + el);
+  labelSumInterest.textContent = `${interest}€`;
+};
+
+//////////////////
+//  Main Logic  //
+//////////////////
+
+// REMEMBER: account1.movements = [200, 450, -400, 3000, -650, -130, 70, 1300]
+
+createUserames(accounts);
 displayMovements(account1.movements);
-
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-// LECTURES
-
-const currencies = new Map([
-  ['USD', 'United States dollar'],
-  ['EUR', 'Euro'],
-  ['GBP', 'Pound sterling'],
-]);
-
-const movements = [200, 450, -400, 3000, -650, -130, 70, 1300];
-
-/////////////////////////////////////////////////
+calcShowBalance(account1.movements);
+calcDisplaySummury(account1.movements);
+/////////////////////////////////////////////////////////////////////////////////////////////
