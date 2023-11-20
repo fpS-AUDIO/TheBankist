@@ -5,28 +5,28 @@
 ////////////
 
 const account1 = {
-  owner: 'Jonas Schmedtmann',
+  owner: 'Alexander Ivanov',
   movements: [200, 450, -400, 3000, -650, -130, 70, 1300],
   interestRate: 1.2, // %
   pin: 1111,
 };
 
 const account2 = {
-  owner: 'Jessica Davis',
+  owner: 'Shelley Coby',
   movements: [5000, 3400, -150, -790, -3210, -1000, 8500, -30],
   interestRate: 1.5,
   pin: 2222,
 };
 
 const account3 = {
-  owner: 'Steven Thomas Williams',
+  owner: 'Bryn Bowie',
   movements: [200, -200, 340, -300, -20, 50, 400, -460],
   interestRate: 0.7,
   pin: 3333,
 };
 
 const account4 = {
-  owner: 'Sarah Smith',
+  owner: 'Parker Hunter',
   movements: [430, 1000, 700, 50, 90],
   interestRate: 1,
   pin: 4444,
@@ -96,7 +96,7 @@ const displayMovements = function (movements) {
 };
 
 // function to calculate and display current balance
-const calcShowBalance = function (movements) {
+const calcDisplayBalance = function (movements) {
   const currentBalance = movements.reduce(function (accumul, current) {
     return accumul + current;
   }, 0);
@@ -104,38 +104,80 @@ const calcShowBalance = function (movements) {
 };
 
 // function to calculate and display summury
-const calcDisplaySummury = function (movements) {
+const calcDisplaySummury = function (account) {
   // money in
-  const totalIn = movements
+  const totalIn = account.movements
     .filter(el => el > 0)
     .reduce((acc, el) => acc + el, 0);
-  labelSumIn.textContent = `${totalIn}€`;
+  labelSumIn.textContent = `${totalIn.toFixed(2)}€`;
 
   // money out
-  const totalOut = movements
+  const totalOut = account.movements
     .filter(el => el < 0)
     .reduce((acc, el) => acc + el, 0);
-  labelSumOut.textContent = `${Math.abs(totalOut)}€`;
+  labelSumOut.textContent = `${Math.abs(totalOut).toFixed(2)}€`;
 
   // interest
   // bank pays interest each time that there is a deposit to the bank account
   // bank only pays an interest if that interest is at least one Euro
-  const interest = movements
+  const interest = account.movements
     .filter(el => el > 0)
-    .map(el => (el * 1.2) / 100)
+    .map(el => (el * account.interestRate) / 100)
     .filter(el => el >= 1)
     .reduce((acc, el) => acc + el);
-  labelSumInterest.textContent = `${interest}€`;
+  labelSumInterest.textContent = `${interest.toFixed(2)}€`;
+};
+
+const updateUI = function (account) {
+  // calculate and display movements
+  displayMovements(account.movements);
+
+  // calculate and display balance
+  calcDisplayBalance(account.movements);
+
+  // calculate and display summury
+  calcDisplaySummury(account);
 };
 
 //////////////////
 //  Main Logic  //
 //////////////////
 
-// REMEMBER: account1.movements = [200, 450, -400, 3000, -650, -130, 70, 1300]
+let currentUser;
 
+// creating "username" property for each account
 createUserames(accounts);
-displayMovements(account1.movements);
-calcShowBalance(account1.movements);
-calcDisplaySummury(account1.movements);
+
+// implementing login
+btnLogin.addEventListener(`click`, function (event) {
+  // prevent from reloading the page
+  event.preventDefault();
+
+  // removing the focus after submitting
+  [inputLoginUsername, inputLoginPin].forEach(el => blur(el));
+
+  // change the current user
+  currentUser = accounts.find(
+    account => account.username === inputLoginUsername.value
+  );
+
+  // check if the "inputLoginPin" (pin) is correct (same as pin of currentUser)
+  if (currentUser?.pin === Number(inputLoginPin.value)) {
+    // change welcome message
+    labelWelcome.textContent = `Welcome back, ${
+      currentUser.owner.split(` `)[0]
+    }!`;
+
+    // show the application
+    containerApp.style.opacity = `100`;
+
+    // update User Interface
+    updateUI(currentUser);
+  }
+
+  // clear the inputs fields
+  [inputLoginUsername, inputLoginPin].forEach(el => (el.value = ``));
+});
+
+btnTransfer.addEventListener(`click`);
 /////////////////////////////////////////////////////////////////////////////////////////////
