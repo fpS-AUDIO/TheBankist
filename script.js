@@ -6,33 +6,48 @@
 
 const account1 = {
   owner: 'Alexander Ivanov',
-  movements: [200, 450, -400, 3000, -650, -130, 70, 1300],
+  movements: [
+    500, -200, 1000, -300, -400, 49, 700, 300, -800, 1200, -500, -1000, 1500,
+  ],
   interestRate: 1.2, // %
   pin: 1111,
 };
 
 const account2 = {
   owner: 'Shelley Coby',
-  movements: [5000, 3400, -150, -790, -3210, -1000, 8500, -30],
+  movements: [
+    1200, -800, 300, -200, -500, 100, 600, -25, -400, 800, -300, -700, 900,
+  ],
   interestRate: 1.5,
   pin: 2222,
 };
 
 const account3 = {
   owner: 'Bryn Bowie',
-  movements: [200, -200, 340, -300, -20, 50, 400, -460],
+  movements: [
+    1500, -1000, 200, -400, -300, 700, 400, -600, 900, -800, -1200, 1800,
+  ],
   interestRate: 0.7,
   pin: 3333,
 };
 
 const account4 = {
   owner: 'Parker Hunter',
-  movements: [430, 1000, 700, 50, 90],
+  movements: [
+    800, -600, 400, -300, -200, 500, 200, -700, 1000, -400, -800, 1200,
+  ],
   interestRate: 1,
   pin: 4444,
 };
 
 const accounts = [account1, account2, account3, account4];
+
+////////////////////////
+//  Global Variables  //
+////////////////////////
+
+let currentUser;
+let isSorted = false;
 
 ////////////////
 //  Elements  //
@@ -79,9 +94,15 @@ const createUserames = function (accs) {
 };
 
 // function to display all movements inside the "containerMovements"
-const displayMovements = function (movements) {
+const displayMovements = function (movements, sorted = false) {
   containerMovements.innerHTML = ``;
-  movements.forEach(function (movement, index) {
+
+  // creating a copy of "movements" array sorting or not based on the argument
+  const movementsCopy = sorted
+    ? movements.slice().sort((a, b) => a - b)
+    : movements.slice();
+
+  movementsCopy.forEach(function (movement, index) {
     const movementType = movement < 0 ? `withdrawal` : `deposit`;
 
     const htmlPiece = `
@@ -96,11 +117,15 @@ const displayMovements = function (movements) {
 };
 
 // function to calculate and display current balance
-const calcDisplayBalance = function (movements) {
-  const currentBalance = movements.reduce(function (accumul, current) {
+const calcDisplayBalance = function (account) {
+  account.currentBalance = account.movements.reduce(function (
+    accumul,
+    current
+  ) {
     return accumul + current;
-  }, 0);
-  labelBalance.textContent = `${currentBalance}€`;
+  },
+  0);
+  labelBalance.textContent = `${account.currentBalance}€`;
 };
 
 // function to calculate and display summury
@@ -133,7 +158,7 @@ const updateUI = function (account) {
   displayMovements(account.movements);
 
   // calculate and display balance
-  calcDisplayBalance(account.movements);
+  calcDisplayBalance(account);
 
   // calculate and display summury
   calcDisplaySummury(account);
@@ -142,8 +167,6 @@ const updateUI = function (account) {
 //////////////////
 //  Main Logic  //
 //////////////////
-
-let currentUser;
 
 // creating "username" property for each account
 createUserames(accounts);
@@ -169,7 +192,7 @@ btnLogin.addEventListener(`click`, function (event) {
     }!`;
 
     // show the application
-    containerApp.style.opacity = `100`;
+    containerApp.style.opacity = 100;
 
     // update User Interface
     updateUI(currentUser);
@@ -179,5 +202,76 @@ btnLogin.addEventListener(`click`, function (event) {
   [inputLoginUsername, inputLoginPin].forEach(el => (el.value = ``));
 });
 
-btnTransfer.addEventListener(`click`);
+// implementing transfers
+btnTransfer.addEventListener(`click`, function (e) {
+  e.preventDefault();
+  // get amount to transfer and receiver
+  const amount = Number(inputTransferAmount.value);
+  const receiver = accounts.find(acc => acc.username === inputTransferTo.value);
+
+  // check if the data for transition is valid
+  if (
+    receiver &&
+    amount <= currentUser.currentBalance &&
+    receiver !== currentUser &&
+    amount > 0
+  ) {
+    // if data is valid add movement for both users (transmitter and receiver)
+    currentUser.movements.push(-amount);
+    receiver.movements.push(amount);
+
+    // and updata UI
+    updateUI(currentUser);
+  }
+  // clear the inputs fields
+  inputTransferTo.value = inputTransferAmount.value = ``;
+});
+
+// implementing loan
+btnLoan.addEventListener(`click`, function (e) {
+  e.preventDefault();
+  // test if data is correct
+  // rule: to get the loan the user should have at least one deposit which is 10% of the loan
+  const amountLoan = Number(inputLoanAmount.value);
+  if (
+    amountLoan > 0 &&
+    currentUser.movements.some(el => el >= amountLoan * 0.1)
+  ) {
+    currentUser.movements.push(amountLoan);
+    updateUI(currentUser);
+  }
+  inputLoanAmount.value = ``;
+});
+
+// implementing closing account
+btnClose.addEventListener(`click`, function (e) {
+  e.preventDefault();
+  // check if the data is correct
+  if (
+    inputCloseUsername.value === currentUser.username &&
+    Number(inputClosePin.value) === currentUser.pin
+  ) {
+    // calculate the index
+    const index = accounts.findIndex(
+      el => el.username === currentUser.username
+    );
+
+    // removing the account from "accounts" array
+    accounts.splice(index, 1);
+
+    // empty the form
+    inputCloseUsername.value = inputClosePin.value = ``;
+  }
+  // hide the application
+  containerApp.style.opacity = 0;
+  labelWelcome.textContent = `Goodbye, ${currentUser.owner.split(` `)[0]}!`;
+});
+
+// implementing sorting
+btnSort.addEventListener(`click`, function (e) {
+  e.preventDefault();
+  displayMovements(currentUser.movements, !isSorted);
+  isSorted = !isSorted;
+});
+
 /////////////////////////////////////////////////////////////////////////////////////////////
