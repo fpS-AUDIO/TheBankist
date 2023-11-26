@@ -6,41 +6,44 @@
 
 const account1 = {
   owner: 'Alexander Ivanov',
-  movements: [
-    500, -200, 1000, -300, -400, 49, 700, 300, -800, 1200, -500, -1000, 1500,
-  ],
+  movements: [500, -200, 1000, -300, -400, 49, 700, 300],
   interestRate: 1.2, // %
   pin: 1111,
+  movementsDates: [
+    '2019-11-18T21:31:17.178Z',
+    '2019-12-23T07:42:02.383Z',
+    '2020-01-28T09:15:04.904Z',
+    '2020-04-01T10:17:24.185Z',
+    '2020-05-08T14:11:59.604Z',
+    '2020-05-27T17:01:17.194Z',
+    '2020-07-11T23:36:17.929Z',
+    '2020-07-12T10:51:36.790Z',
+  ],
+  currency: 'EUR',
+  locale: 'pt-PT', // de-DE
 };
 
 const account2 = {
-  owner: 'Shelley Coby',
-  movements: [
-    1200, -800, 300, -200, -500, 100, 600, -25, -400, 800, -300, -700, 900,
-  ],
-  interestRate: 1.5,
-  pin: 2222,
-};
-
-const account3 = {
   owner: 'Bryn Bowie',
-  movements: [
-    1500, -1000, 200, -400, -300, 700, 400, -600, 900, -800, -1200, 1800,
-  ],
+  movements: [1500, -1000, 200, -400, -300, 700, 400, -600],
   interestRate: 0.7,
-  pin: 3333,
-};
+  pin: 2222,
 
-const account4 = {
-  owner: 'Parker Hunter',
-  movements: [
-    800, -600, 400, -300, -200, 500, 200, -700, 1000, -400, -800, 1200,
+  movementsDates: [
+    '2019-11-01T13:15:33.035Z',
+    '2019-11-30T09:48:16.867Z',
+    '2019-12-25T06:04:23.907Z',
+    '2020-01-25T14:18:46.235Z',
+    '2020-02-05T16:33:06.386Z',
+    '2020-04-10T14:43:26.374Z',
+    '2020-06-25T18:49:59.371Z',
+    '2020-07-26T12:01:20.894Z',
   ],
-  interestRate: 1,
-  pin: 4444,
+  currency: 'USD',
+  locale: 'en-US',
 };
 
-const accounts = [account1, account2, account3, account4];
+const accounts = [account1, account2];
 
 ////////////////////////
 //  Global Variables  //
@@ -94,23 +97,30 @@ const createUserames = function (accs) {
 };
 
 // function to display all movements inside the "containerMovements"
-const displayMovements = function (movements, sorted = false) {
+const displayMovements = function (acc, sorted = false) {
   containerMovements.innerHTML = ``;
 
   // creating a copy of "movements" array sorting or not based on the argument
   const movementsCopy = sorted
-    ? movements.slice().sort((a, b) => a - b)
-    : movements.slice();
+    ? acc.movements.slice().sort((a, b) => a - b)
+    : acc.movements.slice();
 
   movementsCopy.forEach(function (movement, index) {
     const movementType = movement < 0 ? `withdrawal` : `deposit`;
+
+    const movementDate = new Date(acc.movementsDates[index]);
+
+    const movementYear = `${movementDate.getFullYear()}`;
+    const movementMonth = `${movementDate.getMonth() + 1}`.padStart(2, `0`);
+    const movementDay = `${movementDate.getDate()}`.padStart(2, `0`);
 
     const htmlPiece = `
     <div class="movements__row">
       <div class="movements__type movements__type--${movementType}">${
       index + 1
     } ${movementType}</div>
-      <div class="movements__value">${movement}€</div>
+      <div class="movements__date">${movementDay}/${movementMonth}/${movementYear}</div>
+      <div class="movements__value">${movement.toFixed(2)}€</div>
     </div>`;
     containerMovements.insertAdjacentHTML(`afterbegin`, htmlPiece);
   });
@@ -118,6 +128,16 @@ const displayMovements = function (movements, sorted = false) {
 
 // function to calculate and display current balance
 const calcDisplayBalance = function (account) {
+  // get the current date and time
+  const currentDate = new Date();
+
+  // transform "currentDate" in nicely formatted string
+  const currentYear = `${currentDate.getFullYear()}`;
+  const currentMonth = `${currentDate.getMonth() + 1}`.padStart(2, `0`);
+  const currentDay = `${currentDate.getDate()}`.padStart(2, `0`);
+  const currentHour = `${currentDate.getHours()}`.padStart(2, `0`);
+  const currentMinute = `${currentDate.getMinutes()}`.padStart(2, `0`);
+
   account.currentBalance = account.movements.reduce(function (
     accumul,
     current
@@ -125,7 +145,9 @@ const calcDisplayBalance = function (account) {
     return accumul + current;
   },
   0);
-  labelBalance.textContent = `${account.currentBalance}€`;
+  // change content on page
+  labelBalance.textContent = `${account.currentBalance.toFixed(2)}€`;
+  labelDate.textContent = `${currentDay}/${currentMonth}/${currentYear}  ${currentHour}:${currentMinute}`;
 };
 
 // function to calculate and display summury
@@ -155,7 +177,7 @@ const calcDisplaySummury = function (account) {
 
 const updateUI = function (account) {
   // calculate and display movements
-  displayMovements(account.movements);
+  displayMovements(account);
 
   // calculate and display balance
   calcDisplayBalance(account);
@@ -205,6 +227,10 @@ btnLogin.addEventListener(`click`, function (event) {
 // implementing transfers
 btnTransfer.addEventListener(`click`, function (e) {
   e.preventDefault();
+
+  // get the current date in ISO
+  const currentDateISO = new Date().toISOString();
+
   // get amount to transfer and receiver
   const amount = Number(inputTransferAmount.value);
   const receiver = accounts.find(acc => acc.username === inputTransferTo.value);
@@ -220,6 +246,10 @@ btnTransfer.addEventListener(`click`, function (e) {
     currentUser.movements.push(-amount);
     receiver.movements.push(amount);
 
+    // if data is valid add movements dates for both users (transmitter and receiver)
+    currentUser.movementsDates.push(currentDateISO);
+    receiver.movementsDates.push(currentDateISO);
+
     // and updata UI
     updateUI(currentUser);
   }
@@ -232,12 +262,15 @@ btnLoan.addEventListener(`click`, function (e) {
   e.preventDefault();
   // test if data is correct
   // rule: to get the loan the user should have at least one deposit which is 10% of the loan
-  const amountLoan = Number(inputLoanAmount.value);
+  const amountLoan = Math.floor(inputLoanAmount.value);
+  const currentDateISO = new Date().toISOString();
   if (
     amountLoan > 0 &&
     currentUser.movements.some(el => el >= amountLoan * 0.1)
   ) {
+    // update array of movements and dates
     currentUser.movements.push(amountLoan);
+    currentUser.movementsDates.push(currentDateISO);
     updateUI(currentUser);
   }
   inputLoanAmount.value = ``;
@@ -270,8 +303,10 @@ btnClose.addEventListener(`click`, function (e) {
 // implementing sorting
 btnSort.addEventListener(`click`, function (e) {
   e.preventDefault();
-  displayMovements(currentUser.movements, !isSorted);
+  displayMovements(currentUser, !isSorted);
   isSorted = !isSorted;
 });
 
 /////////////////////////////////////////////////////////////////////////////////////////////
+
+console.log(`---------------CONTINUE HERE---------------`);
