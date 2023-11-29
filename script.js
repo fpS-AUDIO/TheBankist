@@ -6,7 +6,7 @@
 
 const account1 = {
   owner: 'Alexander Ivanov',
-  movements: [500, -200, 1000, -300, -400, 49, 700, 300],
+  movements: [500, -200, 125000, -300, -400, 49, 700, 300],
   interestRate: 1.2, // %
   pin: 1111,
   movementsDates: [
@@ -51,6 +51,7 @@ const accounts = [account1, account2];
 
 let currentUser;
 let isSorted = false;
+let timer;
 
 ////////////////
 //  Elements  //
@@ -84,6 +85,40 @@ const inputClosePin = document.querySelector('.form__input--pin');
 /////////////////
 //  Functions  //
 /////////////////
+
+// function to make timer work and logout user
+const startTimer = function () {
+  let timerTime = 300;
+  // tick function for callback of setInterval()
+  const tick = function () {
+    // convert timerTIme in minutes and seconds
+    const minutes = String(Math.trunc(timerTime / 60)).padStart(2, 0);
+    const seconds = String(timerTime % 60).padStart(2, 0);
+
+    // update timer in UI
+    const remainingTimeStr = `${minutes}:${seconds}`;
+    labelTimer.textContent = remainingTimeStr;
+
+    // if timerTime is finished
+    if (timerTime === 0) {
+      // stop ticking
+      clearInterval(timer);
+      // logout user
+      labelWelcome.textContent = `Log in to get started`;
+      containerApp.style.opacity = 0;
+    }
+
+    // decrease timer time
+    timerTime--;
+  };
+
+  // call tick() once first seconds then each seconds thanks to the setInterval
+  tick();
+  // call tick every 1000ms
+  const timer = setInterval(tick, 1000);
+  // returing "timer" variable to be able to clearInterval(timer) outside the function
+  return timer;
+};
 
 // universal function to display currency
 const formatCurrency = function (value, locale, currency) {
@@ -294,6 +329,11 @@ btnLogin.addEventListener(`click`, function (event) {
 
     // update User Interface
     updateUI(currentUser);
+
+    // check if there is a timer, if yes clear it
+    if (timer) clearInterval(timer);
+    // start new timer
+    timer = startTimer();
   }
 
   // clear the inputs fields
@@ -331,6 +371,10 @@ btnTransfer.addEventListener(`click`, function (e) {
   }
   // clear the inputs fields
   inputTransferTo.value = inputTransferAmount.value = ``;
+  // check if there is a timer, if yes clear it
+  if (timer) clearInterval(timer);
+  // start new timer
+  timer = startTimer();
 });
 
 // implementing loan
@@ -353,6 +397,10 @@ btnLoan.addEventListener(`click`, function (e) {
     }, 3 * 1000);
   }
   inputLoanAmount.value = ``;
+  // check if there is a timer, if yes clear it
+  if (timer) clearInterval(timer);
+  // start new timer
+  timer = startTimer();
 });
 
 // implementing closing account
@@ -389,3 +437,10 @@ btnSort.addEventListener(`click`, function (e) {
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 console.log(`---------------CONTINUE HERE---------------`);
+// time in seconds
+
+// create a global variable "timerTime" in seconds
+// calculate and show "timerTime" in minutes and seconds
+// decrease timer on each second
+// reset timer if operation/change user
+// logout if timer is o
